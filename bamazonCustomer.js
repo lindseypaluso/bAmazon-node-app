@@ -64,16 +64,12 @@ function promptCustomer(tableData) {
 
             var desiredProductID = userInput.productID;
             var numWanted = userInput.quantity;
-            var numAvailable;
+            var numAvailable = tableData[desiredProductID - 1].stock_quantity;
+            var price = (numWanted * tableData[desiredProductID - 1].price)
+
+            console.log("Total price: " + price)
+            console.log(numWanted, numAvailable);
             
-
-
-
-            for (i = 0; i < tableData.length; i++) {
-                if (parseInt(desiredProductID) === tableData[i].item_id) {
-                    numAvailable = tableData[i].stock_quantity
-                }
-            }
             if (numWanted > numAvailable) {
                 console.log("\n Sorry we do not have enough available to fullfil your order. Please choose a lower quantity or select another item.");
                 inquirer.prompt([{
@@ -81,39 +77,47 @@ function promptCustomer(tableData) {
                     name: 'shop',
                     message: "Is there anything else we can help you with?"
                 }])
+                .then(function (res) {
+
+                    if (!res.shop) {
+                        console.log("Thanks for your business!")
+                        connection.end()
+                    }
+
+                    else if (res.shop) {
+                        listProducts();
+                        // loop back around to line 60 
+
+                    }
+                })
                 // else complete the purchase - ie update the number available in the database
             } else {
                 // call another function -> passing through the itemID and numrequested
                 // Update table - connection.query
-                connection.query("SELECT * FROM products WHERE item_id = ?", [desiredProductID], function (err, response) {
-                    console.log(numWanted *= response[0].price)
-                }
-                )
                 // .then
-                connection.query('UPDATE products SET stock_quantity = stock_quantity - ? WHERE item_id = ?', [numWanted, desiredProductID], function (err, response) {
+                connection.query('UPDATE products SET stock_quantity = ? WHERE item_id = ?', [numAvailable - numWanted, desiredProductID], function (err, response) {
                     if (err) throw err;
+                    // console.log(response);
+                    inquirer.prompt([{
+                        type: 'confirm',
+                        name: 'shop',
+                        message: "Is there anything else we can help you with?"
+                    }])
+                        .then(function (res) {
+    
+                            if (!res.shop) {
+                                console.log("Thanks for your business!")
+                                connection.end()
+                            }
+    
+                            else if (res.shop) {
+                                listProducts();
+                                // loop back around to line 60 
+    
+                            }
+                        })
                 })
-                inquirer.prompt([{
-                    type: 'confirm',
-                    name: 'shop',
-                    message: "Is there anything else we can help you with?"
-                }])
-                    .then(function (res) {
-
-                        if (!res.shop) {
-                            console.log("Thanks for your business!")
-                            process.exit()
-                        }
-
-                        // if (res.shop) {
-                        //     inquirer.prompt([{
-                        //         type: 'confirm',
-                        //         name: 'shop',
-                        //         message: "What is the next item ID #?"
-                        //     }])
-
-                        // }
-                    })
+                
 
             }
         });
